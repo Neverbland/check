@@ -1,8 +1,8 @@
 package check
 
 import (
-	"strconv"
 	"reflect"
+	"strconv"
 )
 
 type Slice struct {
@@ -10,9 +10,7 @@ type Slice struct {
 }
 
 func (c Slice) Validate(v interface{}) Error {
-	err := ValidationError{
-		errorMap: map[string][]interface{}{},
-	}
+	err := CompoundValidationError{}
 
 	t := reflect.ValueOf(v)
 
@@ -20,16 +18,12 @@ func (c Slice) Validate(v interface{}) Error {
 	case reflect.Array, reflect.Slice:
 		for i := 0; i < t.Len(); i++ {
 			if verr := c.Inner.Validate(t.Index(i).Interface()); verr != nil {
-				err.errorMap[strconv.Itoa(i)] = append([]interface{}{}, verr)
+				err.AddError(strconv.Itoa(i), verr)
 			}
 		}
 	default:
-		return NewValidationError("notSlice")
+		return ValidationErr("slice.type", "not a slice", v)
 	}
 
-	if len(err.errorMap) == 0 {
-		return nil
-	}
-
-	return err
+	return err.Value()
 }
