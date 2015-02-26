@@ -1,6 +1,7 @@
 package check
 
 import (
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
@@ -10,9 +11,9 @@ type CustomStringContainValidator struct {
 	Constraint string
 }
 
-func (validator CustomStringContainValidator) Validate(v interface{}) Error {
-	if !strings.Contains(v.(string), validator.Constraint) {
-		return NewValidationError("customStringContainValidator", v, validator.Constraint)
+func (validator CustomStringContainValidator) ValidateString(v string) Error {
+	if !strings.Contains(v, validator.Constraint) {
+		return ValidationErr("customStringContainValidator", "customStringContainValidator", v, validator.Constraint)
 	}
 
 	return nil
@@ -27,36 +28,37 @@ type User struct {
 	Birthday time.Time
 }
 
-func (u *User) Validate() StructError {
+func (u *User) Validate() Error {
 	s := Struct{
-		"Username": Composite{
+		"Username": String{
 			NonEmpty{},
 			Regex{`^[a-zA-Z0-9]+$`},
 		},
-		"Password": Composite{
+		"Password": String{
 			NonEmpty{},
 			MinChar{8},
 		},
-		"Name": NonEmpty{},
-		"Age": Composite{
+		"Name": NonEmptyString{},
+		"Age": Number{
 			GreaterThan{3},
 			LowerThan{120},
 		},
-		"Email": Composite{
+		"Email": String{
 			Email{},
 			CustomStringContainValidator{"test.com"},
 		},
-		"Birthday": Composite{
+		"Birthday": Time{
 			Before{time.Date(1990, time.January, 1, 1, 0, 0, 0, time.UTC)},
 			After{time.Date(1900, time.January, 1, 1, 0, 0, 0, time.UTC)},
 		},
 	}
-	e := s.Validate(u)
-
-	return e
+	return s.Validate(u)
 }
 
 func TestIntegration(t *testing.T) {
+
+	assert := assert.New(t)
+
 	invalidUser := &User{
 		"not-valid-username*",
 		"123",   // Invalid password length
@@ -75,32 +77,16 @@ func TestIntegration(t *testing.T) {
 		time.Date(1980, time.January, 1, 1, 0, 0, 0, time.UTC),
 	}
 
-	e := invalidUser.Validate()
-	if !e.HasErrors() {
-		t.Errorf("Expected 'invalidUser' to be invalid")
-	}
+	err := ErrorReader{invalidUser.Validate()}
 
-	err, ok := e.GetErrorsByKey("Username")
-	if !ok {
-		t.Errorf("Expected errors for 'Username'")
-	} else {
-		if len(err) < 1 {
-			t.Errorf("Expected 1 error for 'Username'")
-		}
-	}
+	assert.False(err.Empty(), "Expected 'invalidUser' to be invalid")
 
-	errMessages := e.ToMessages()
-	if errMessages["Name"]["nonZero"] != ErrorMessages["nonZero"] {
-		t.Errorf("Expected proper error message")
-	}
+	err = err.Get("Username")
+	assert.False(err.Empty(), "Expected errors for 'Username'")
+	assert.Equal(1, err.Count(), "Expected 1 error for 'Username'")
+	assert.Equal("string.regex", err.Name(), "Expected regex error")
 
-	// json, _ := json.MarshalIndent(errMessages, "", "	")
-	// log.Println(string(json))
-
-	e = validUser.Validate()
-	if e.HasErrors() {
-		t.Errorf("Expected 'validUser' to be valid")
-	}
+	assert.True(ErrorReader{validUser.Validate()}.Empty(), "Expected 'validUser' to be valid")
 }
 
 func BenchmarkValidate(b *testing.B) {

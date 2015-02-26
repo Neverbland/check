@@ -1,7 +1,5 @@
 package check
 
-import "fmt"
-
 type Person struct {
 	Name string
 }
@@ -12,20 +10,17 @@ func Example() {
 	}
 
 	s := Struct{
-		"Name": Composite{
+		"Name": String{
 			NonEmpty{},
 			Regex{`^[a-zA-Z0-9]+$`},
 			MinChar{10},
 		},
 	}
 
-	e := s.Validate(*p)
-
-	if e.HasErrors() {
-		err, ok := e.GetErrorsByKey("Name")
-		if !ok {
+	er := ErrorReader{s.Validate(*p)}
+	if er.Count() != 0 {
+		if er.Get("Name").Empty() {
 			panic("key 'Name' does not exists")
 		}
-		fmt.Println(err)
 	}
 }

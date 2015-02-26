@@ -5,17 +5,51 @@ import (
 	"strings"
 )
 
+type StringValidator interface {
+	ValidateString(string) Error
+}
+
+type String []StringValidator
+
+func (validators String) Validate(v interface{}) Error {
+	s, ok := v.(string)
+	if !ok {
+		return ValidationErr("string.type", "not a string", v)
+	}
+
+	errs := ErrorCollection{}
+
+	for _, validator := range validators {
+		if err := validator.ValidateString(s); err != nil {
+			errs.Add(err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
+}
+
+//short form to check if value is a string and not empty
+type NonEmptyString struct{}
+
+func (validator NonEmptyString) Validate(v interface{}) Error {
+	return String{NonEmpty{}}.Validate(v)
+}
+
 // MinChar validates that a string must have a length minimum of its constraint
 type MinChar struct {
 	Constraint int
 }
 
 // Validate check value against constraint
-func (validator MinChar) Validate(v interface{}) Error {
-	if len(v.(string)) < validator.Constraint {
-		return NewValidationError("minChar", validator.Constraint)
-	}
+func (validator MinChar) ValidateString(v string) Error {
 
+	if len(v) < validator.Constraint {
+		return ValidationErr("string.min", "too short, minimum %v characters", validator.Constraint)
+	}
 	return nil
 }
 
@@ -25,11 +59,10 @@ type MaxChar struct {
 }
 
 // Validate check value against constraint
-func (validator MaxChar) Validate(v interface{}) Error {
-	if len(v.(string)) > validator.Constraint {
-		return NewValidationError("maxChar", validator.Constraint)
+func (validator MaxChar) ValidateString(v string) Error {
+	if len(v) > validator.Constraint {
+		return ValidationErr("string.max", "too long, minimum %v characters", validator.Constraint)
 	}
-
 	return nil
 }
 
@@ -38,28 +71,27 @@ func (validator MaxChar) Validate(v interface{}) Error {
 type Email struct{}
 
 // Validate email addresses
-func (validator Email) Validate(v interface{}) Error {
-	if !strings.Contains(v.(string), "@") || string(v.(string)[0]) == "@" || string(v.(string)[len(v.(string))-1]) == "@" {
-		return NewValidationError("email", v)
+func (validator Email) ValidateString(v string) Error {
+
+	if !strings.Contains(v, "@") || string(v[0]) == "@" || string(v[len(v)-1]) == "@" {
+		return ValidationErr("string.email", "'%v' is an invalid email address", v)
 	}
 
 	return nil
 }
 
-// Regex allow validation usig regular expressions
+// Regex allow validation using regular expressions
 type Regex struct {
 	Constraint string
 }
 
 // Validate using regex
-func (validator Regex) Validate(v interface{}) Error {
-	regex, err := regexp.Compile(validator.Constraint)
-	if err != nil {
-		panic(err)
-	}
+func (validator Regex) ValidateString(v string) Error {
 
-	if !regex.MatchString(v.(string)) {
-		return NewValidationError("regex", v, validator.Constraint)
+	regex := regexp.MustCompile(validator.Constraint)
+
+	if !regex.MatchString(v) {
+		return ValidationErr("string.regex", "'%v' does not match '%v'", v, validator.Constraint)
 	}
 
 	return nil
@@ -69,12 +101,12 @@ func (validator Regex) Validate(v interface{}) Error {
 type UUID struct{}
 
 // Validate checks a string as correct UUID format
-func (validator UUID) Validate(v interface{}) Error {
+func (validator UUID) ValidateString(v string) Error {
+
 	regex := regexp.MustCompile("^[a-z0-9]{8}-[a-z0-9]{4}-[1-5][a-z0-9]{3}-[a-z0-9]{4}-[a-z0-9]{12}$")
 
-	if !regex.MatchString(v.(string)) {
-		return NewValidationError("uuid", v)
+	if !regex.MatchString(v) {
+		return ValidationErr("string.uuid", "'%v' is an invalid uuid", v)
 	}
-
 	return nil
 }
