@@ -30,5 +30,9 @@ func (validators And) Validate(v interface{}) Error {
 		}
 	}
 
-	return e
+	if len(e) > 0 {
+		return e
+	}
+
+	return nil
 }
