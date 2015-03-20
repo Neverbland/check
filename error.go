@@ -1,6 +1,7 @@
 package check
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/neverbland/access"
 )
@@ -32,6 +33,10 @@ func (e ValidationError) Error() string {
 func (e ValidationError) Count() int   { return 1 }
 func (e ValidationError) Empty() bool  { return false }
 func (e ValidationError) Name() string { return e.name }
+
+func (e ValidationError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.Error())
+}
 
 type ErrorCollection []Error
 
