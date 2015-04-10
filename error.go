@@ -46,6 +46,9 @@ func (e ErrorCollection) Error() string {
 	}
 	str := ""
 	for i, err := range e {
+		if err == nil {
+			continue
+		}
 		str += fmt.Sprintf("%d: %s \n", i, err)
 	}
 
@@ -55,6 +58,9 @@ func (e ErrorCollection) Error() string {
 func (e ErrorCollection) Count() int {
 	count := 0
 	for _, err := range e {
+		if err == nil {
+			continue
+		}
 		count += err.Count()
 	}
 
@@ -63,6 +69,9 @@ func (e ErrorCollection) Count() int {
 
 func (e ErrorCollection) Empty() bool {
 	for _, err := range e {
+		if err == nil {
+			continue
+		}
 		if !err.Empty() {
 			return false
 		}
