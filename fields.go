@@ -41,12 +41,10 @@ func (m Map) Validate(v interface{}) Error {
 	return nil
 }
 
-type Child struct {
-	Validator Validator
-}
+type Child []Validator
 
 func (validator Child) Validate(v interface{}) Error {
-	return validator.Validator.Validate(v)
+	return And(validator).Validate(v)
 }
 
 // Struct allows validation of structs
