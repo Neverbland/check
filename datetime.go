@@ -2,11 +2,7 @@ package check
 
 import "time"
 
-type Time []TimeValidator
-
-type TimeValidator interface {
-	ValidateTime(time.Time) Error
-}
+type Time []Validator
 
 func (validators Time) Validate(v interface{}) Error {
 	t, ok := v.(time.Time)
@@ -14,45 +10,35 @@ func (validators Time) Validate(v interface{}) Error {
 		return ValidationErr("time.type", "not a time", v)
 	}
 
-	errs := ErrorCollection{}
-
-	for _, validator := range validators {
-		if err := validator.ValidateTime(t); err != nil {
-			errs.Add(err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
-
+	return And(validators).Validate(t)
 }
 
 // Before check if a time in Value is before the time in Constraint
 type Before struct {
-	Constraint time.Time
+	time.Time
 }
 
 // Validate check if a time in Value is before the time in Constraint
-func (validator Before) ValidateTime(v time.Time) Error {
+func (validator Before) Validate(v interface{}) Error {
 
-	if !v.Before(validator.Constraint) {
-		return ValidationErr("datetime.before", "%v is not before %v", v.String(), validator.Constraint.String())
+	val := v.(time.Time)
+
+	if !val.Before(validator.Time) {
+		return ValidationErr("datetime.before", "%v is not before %v", val.String(), validator.String())
 	}
 	return nil
 }
 
 // After check if a time in Value is before the time in Constraint
 type After struct {
-	Constraint time.Time
+	time.Time
 }
 
 // Validate check if a time in Value is after the time in Constraint
-func (validator After) ValidateTime(v time.Time) Error {
-	if !v.After(validator.Constraint) {
-		return ValidationErr("datetime.after", "%v is not after %v", v.String(), validator.Constraint.String())
+func (validator After) Validate(v interface{}) Error {
+	val := v.(time.Time)
+	if !val.After(validator.Time) {
+		return ValidationErr("datetime.after", "%v is not after %v", val.String(), validator.String())
 	}
 	return nil
 }

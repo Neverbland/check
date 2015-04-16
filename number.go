@@ -4,40 +4,14 @@ import (
 	"strconv"
 )
 
-type FloatValidator interface {
-	ValidateFloat(float64) Error
-}
-type IntValidator interface {
-	ValidateInt(int) Error
-}
-
-type NumberValidator interface {
-	FloatValidator
-	IntValidator
-}
-
-type Number []NumberValidator
+type Number []Validator
 
 func (validators Number) Validate(v interface{}) Error {
 
 	switch v.(type) {
-	case int:
+	case int, float64:
+		return And(validators).Validate(v)
 
-		intv := make([]IntValidator, len(validators))
-
-		for i, numv := range validators {
-			intv[i] = numv.(IntValidator)
-		}
-
-		return Integer(intv).Validate(v)
-	case float64:
-		floatv := make([]FloatValidator, len(validators))
-
-		for i, numv := range validators {
-			floatv[i] = numv.(FloatValidator)
-		}
-
-		return Float(floatv).Validate(v)
 	default:
 		return ValidationErr("number.type", "%T not a number", v)
 	}
@@ -45,7 +19,7 @@ func (validators Number) Validate(v interface{}) Error {
 	return nil
 }
 
-type Integer []IntValidator
+type Integer []Validator
 
 func (validators Integer) Validate(v interface{}) Error {
 
@@ -55,23 +29,11 @@ func (validators Integer) Validate(v interface{}) Error {
 		return ValidationErr("integer.type", " %T not an integer", v)
 	}
 
-	errs := ErrorCollection{}
-
-	for _, validator := range validators {
-		if err := validator.ValidateInt(val); err != nil {
-			errs.Add(err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
+	return And(validators).Validate(val)
 
 }
 
-type Float []FloatValidator
+type Float []Validator
 
 func (validators Float) Validate(v interface{}) Error {
 
@@ -81,21 +43,7 @@ func (validators Float) Validate(v interface{}) Error {
 		return ValidationErr("float.type", "%T not a float", v)
 	}
 
-	errs := ErrorCollection{}
-
-	for _, validator := range validators {
-		if err := validator.ValidateFloat(val); err != nil {
-			errs.Add(err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
-
-	return nil
+	return And(validators).Validate(val)
 }
 
 // LowerThan validates that a number must be lower than its value
@@ -103,21 +51,17 @@ type LowerThan struct {
 	Constraint float64
 }
 
-// Validate check value against constraint
-func (validator LowerThan) ValidateInt(v int) Error {
+func (validator LowerThan) Validate(v interface{}) Error {
 
-	if validator.Constraint <= float64(v) {
-		return ValidationErr("number.lower", "%v is not lower than %v", strconv.Itoa(v), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
-	}
-
-	return nil
-}
-
-// Validate check value against constraint
-func (validator LowerThan) ValidateFloat(v float64) Error {
-
-	if validator.Constraint <= v {
-		return ValidationErr("number.lower", "%v is not lower than %v", strconv.FormatFloat(v, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+	switch val := v.(type) {
+	case float64:
+		if validator.Constraint <= val {
+			return ValidationErr("number.lower", "%v is not lower than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+		}
+	case int:
+		if validator.Constraint <= float64(val) {
+			return ValidationErr("number.lower", "%v is not lower than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+		}
 	}
 
 	return nil
@@ -129,20 +73,17 @@ type GreaterThan struct {
 }
 
 // Validate check value against constraint
-func (validator GreaterThan) ValidateInt(v int) Error {
+func (validator GreaterThan) Validate(v interface{}) Error {
 
-	if validator.Constraint >= float64(v) {
-		return ValidationErr("number.greater", "%v is not greater than %v", strconv.Itoa(v), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
-	}
-
-	return nil
-}
-
-// Validate check value against constraint
-func (validator GreaterThan) ValidateFloat(v float64) Error {
-
-	if validator.Constraint >= v {
-		return ValidationErr("number.greater", "%v is not greater than %v", strconv.FormatFloat(v, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+	switch val := v.(type) {
+	case float64:
+		if validator.Constraint >= val {
+			return ValidationErr("number.greater", "%v is not greater than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+		}
+	case int:
+		if validator.Constraint >= float64(val) {
+			return ValidationErr("number.greater", "%v is not greater than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+		}
 	}
 
 	return nil

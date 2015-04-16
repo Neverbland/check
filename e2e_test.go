@@ -11,8 +11,8 @@ type CustomStringContainValidator struct {
 	Constraint string
 }
 
-func (validator CustomStringContainValidator) ValidateString(v string) Error {
-	if !strings.Contains(v, validator.Constraint) {
+func (validator CustomStringContainValidator) Validate(v interface{}) Error {
+	if !strings.Contains(v.(string), validator.Constraint) {
 		return ValidationErr("customStringContainValidator", "customStringContainValidator", v, validator.Constraint)
 	}
 

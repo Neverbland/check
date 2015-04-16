@@ -5,31 +5,15 @@ import (
 	"strings"
 )
 
-type StringValidator interface {
-	ValidateString(string) Error
-}
-
-type String []StringValidator
+type String []Validator
 
 func (validators String) Validate(v interface{}) Error {
-	s, ok := v.(string)
+	_, ok := v.(string)
 	if !ok {
-		return ValidationErr("string.type", "not a string", v)
+		return ValidationErr("string.type", "not a string")
 	}
 
-	errs := ErrorCollection{}
-
-	for _, validator := range validators {
-		if err := validator.ValidateString(s); err != nil {
-			errs.Add(err)
-		}
-	}
-
-	if len(errs) > 0 {
-		return errs
-	}
-
-	return nil
+	return And(validators).Validate(v)
 }
 
 //short form to check if value is a string and not empty
@@ -45,9 +29,9 @@ type MinChar struct {
 }
 
 // Validate check value against constraint
-func (validator MinChar) ValidateString(v string) Error {
+func (validator MinChar) Validate(v interface{}) Error {
 
-	if len(v) < validator.Constraint {
+	if len(v.(string)) < validator.Constraint {
 		return ValidationErr("string.min", "too short, minimum %v characters", validator.Constraint)
 	}
 	return nil
@@ -59,8 +43,8 @@ type MaxChar struct {
 }
 
 // Validate check value against constraint
-func (validator MaxChar) ValidateString(v string) Error {
-	if len(v) > validator.Constraint {
+func (validator MaxChar) Validate(v interface{}) Error {
+	if len(v.(string)) > validator.Constraint {
 		return ValidationErr("string.max", "too long, minimum %v characters", validator.Constraint)
 	}
 	return nil
@@ -71,10 +55,12 @@ func (validator MaxChar) ValidateString(v string) Error {
 type Email struct{}
 
 // Validate email addresses
-func (validator Email) ValidateString(v string) Error {
+func (validator Email) Validate(v interface{}) Error {
 
-	if !strings.Contains(v, "@") || string(v[0]) == "@" || string(v[len(v) - 1]) == "@" {
-		return ValidationErr("string.email", "'%v' is an invalid email address", v)
+	str := v.(string)
+
+	if !strings.Contains(str, "@") || string(str[0]) == "@" || string(str[len(str) - 1]) == "@" {
+		return ValidationErr("string.email", "'%v' is an invalid email address", str)
 	}
 
 	return nil
@@ -90,24 +76,24 @@ type RegexpValidator struct {
 }
 
 // Validate using regex
-func (validator RegexpValidator) ValidateString(v string) Error {
+func (validator RegexpValidator) Validate(v interface{}) Error {
 
-	if !validator.MatchString(v) {
+	if !validator.MatchString(v.(string)) {
 		return ValidationErr("string.regex", "'%v' does not match '%v'", v, validator.String())
 	}
 
 	return nil
 }
 
+var UUIDRe = regexp.MustCompile("^[a-z0-9]{8}-[a-z0-9]{4}-[1-5][a-z0-9]{3}-[a-z0-9]{4}-[a-z0-9]{12}$")
+
 // UUID verify a string in the UUID format xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx
 type UUID struct{}
 
 // Validate checks a string as correct UUID format
-func (validator UUID) ValidateString(v string) Error {
+func (validator UUID) Validate(v interface{}) Error {
 
-	regex := regexp.MustCompile("^[a-z0-9]{8}-[a-z0-9]{4}-[1-5][a-z0-9]{3}-[a-z0-9]{4}-[a-z0-9]{12}$")
-
-	if !regex.MatchString(v) {
+	if !UUIDRe.MatchString(v.(string)) {
 		return ValidationErr("string.uuid", "'%v' is an invalid uuid", v)
 	}
 	return nil
