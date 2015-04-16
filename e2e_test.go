@@ -32,7 +32,7 @@ func (u *User) Validate() Error {
 	s := Struct{
 		"Username": String{
 			NonEmpty{},
-			Regex{`^[a-zA-Z0-9]+$`},
+			Regexp(`^[a-zA-Z0-9]+$`),
 		},
 		"Password": String{
 			NonEmpty{},
@@ -61,9 +61,9 @@ func TestIntegration(t *testing.T) {
 
 	invalidUser := &User{
 		"not-valid-username*",
-		"123",   // Invalid password length
-		"",      // Cannot be empty
-		150,     // Invalid age
+		"123", // Invalid password length
+		"", // Cannot be empty
+		150, // Invalid age
 		"@test", // Invalid email address
 		time.Date(1991, time.January, 1, 1, 0, 0, 0, time.UTC), // Invalid date
 	}
@@ -93,9 +93,9 @@ func BenchmarkValidate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		invalidUser := &User{
 			"not-valid-username*",
-			"123",   // Invalid password length
-			"",      // Cannot be empty
-			150,     // Invalid age
+			"123", // Invalid password length
+			"", // Cannot be empty
+			150, // Invalid age
 			"@test", // Invalid email address
 			time.Date(1991, time.January, 1, 1, 0, 0, 0, time.UTC), // Invalid date
 		}

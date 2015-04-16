@@ -12,7 +12,7 @@ func Example() {
 	s := Struct{
 		"Name": String{
 			NonEmpty{},
-			Regex{`^[a-zA-Z0-9]+$`},
+			Regexp(`^[a-zA-Z0-9]+$`),
 			MinChar{10},
 		},
 	}

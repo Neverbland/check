@@ -73,25 +73,27 @@ type Email struct{}
 // Validate email addresses
 func (validator Email) ValidateString(v string) Error {
 
-	if !strings.Contains(v, "@") || string(v[0]) == "@" || string(v[len(v)-1]) == "@" {
+	if !strings.Contains(v, "@") || string(v[0]) == "@" || string(v[len(v) - 1]) == "@" {
 		return ValidationErr("string.email", "'%v' is an invalid email address", v)
 	}
 
 	return nil
 }
 
+func Regexp(re string) RegexpValidator {
+	return RegexpValidator{regexp.MustCompile(re)}
+}
+
 // Regex allow validation using regular expressions
-type Regex struct {
-	Constraint string
+type RegexpValidator struct {
+	*regexp.Regexp
 }
 
 // Validate using regex
-func (validator Regex) ValidateString(v string) Error {
+func (validator RegexpValidator) ValidateString(v string) Error {
 
-	regex := regexp.MustCompile(validator.Constraint)
-
-	if !regex.MatchString(v) {
-		return ValidationErr("string.regex", "'%v' does not match '%v'", v, validator.Constraint)
+	if !validator.MatchString(v) {
+		return ValidationErr("string.regex", "'%v' does not match '%v'", v, validator.String())
 	}
 
 	return nil
