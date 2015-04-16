@@ -39,10 +39,7 @@ func (u *User) Validate() Error {
 			MinChar{8},
 		},
 		"Name": NonEmptyString{},
-		"Age": Number{
-			GreaterThan{3},
-			LowerThan{120},
-		},
+		"Age":  Between(3, 120),
 		"Email": String{
 			Email{},
 			CustomStringContainValidator{"test.com"},

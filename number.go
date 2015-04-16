@@ -46,45 +46,99 @@ func (validators Float) Validate(v interface{}) Error {
 	return And(validators).Validate(val)
 }
 
-// LowerThan validates that a number must be lower than its value
-type LowerThan struct {
-	Constraint float64
+func LowerThan(v float64) LowerThanNumber {
+	return LowerThanNumber{v, false}
 }
 
-func (validator LowerThan) Validate(v interface{}) Error {
+func LowerThanOrEqual(v float64) LowerThanNumber {
+	return LowerThanNumber{v, true}
+}
+
+// LowerThanNumber validates that a number must be lower than its value
+type LowerThanNumber struct {
+	Constraint float64
+	Inclusive  bool
+}
+
+func (validator LowerThanNumber) Validate(v interface{}) Error {
 
 	switch val := v.(type) {
 	case float64:
-		if validator.Constraint <= val {
-			return ValidationErr("number.lower", "%v is not lower than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
+		diff := validator.Constraint - val
+
+		if (validator.Inclusive && diff == 0) || diff > 0 {
+			return nil
 		}
+
+		return ValidationErr("number.lower", "%v is not lower than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
 	case int:
-		if validator.Constraint <= float64(val) {
-			return ValidationErr("number.lower", "%v is not lower than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
+		diff := validator.Constraint - float64(val)
+
+		if (validator.Inclusive && diff == 0) || diff > 0 {
+			return nil
 		}
+
+		return ValidationErr("number.lower", "%v is not lower than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
 	}
 
 	return nil
 }
 
-// GreaterThan validates that a number must be greater than its value
-type GreaterThan struct {
+func GreaterThan(v float64) GreaterThanNumber {
+	return GreaterThanNumber{v, false}
+}
+
+func GreaterThanOrEqual(v float64) GreaterThanNumber {
+	return GreaterThanNumber{v, true}
+}
+
+// GreaterThanNumber validates that a number must be greater than its value
+type GreaterThanNumber struct {
 	Constraint float64
+	Inclusive  bool
 }
 
 // Validate check value against constraint
-func (validator GreaterThan) Validate(v interface{}) Error {
+func (validator GreaterThanNumber) Validate(v interface{}) Error {
 
 	switch val := v.(type) {
 	case float64:
-		if validator.Constraint >= val {
-			return ValidationErr("number.greater", "%v is not greater than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
+		diff := val - validator.Constraint
+
+		if (validator.Inclusive && diff == 0) || diff > 0 {
+			return nil
 		}
+
+		return ValidationErr("number.greater", "%v is not greater than %v", strconv.FormatFloat(val, 'f', -1, 64), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
 	case int:
-		if validator.Constraint >= float64(val) {
-			return ValidationErr("number.greater", "%v is not greater than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
+
+		diff := float64(val) - validator.Constraint
+
+		if (validator.Inclusive && diff == 0) || diff > 0 {
+			return nil
 		}
+
+		return ValidationErr("number.greater", "%v is not greater than %v", strconv.Itoa(val), strconv.FormatFloat(validator.Constraint, 'f', -1, 64))
 	}
 
 	return nil
+}
+
+func Between(min, max float64) And {
+	return And{
+		GreaterThan(min),
+		LowerThan(max),
+	}
+}
+
+func BetweenInclusive(min, max float64) And {
+	return And{
+		GreaterThanOrEqual(min),
+		LowerThanOrEqual(max),
+	}
 }
