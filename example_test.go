@@ -17,9 +17,8 @@ func Example() {
 		},
 	}
 
-	er := ErrorReader{s.Validate(*p)}
-	if er.Count() != 0 {
-		if er.Get("Name").Empty() {
+	if er := Validate(s, p); er.IsError() {
+		if er.Get("Name").IsError() {
 			panic("key 'Name' does not exists")
 		}
 	}

@@ -1,16 +1,20 @@
 package check
 
+import (
+	"github.com/neverbland/fail"
+)
+
 type Or []Validator
 
-func (validators Or) Validate(v interface{}) Error {
+func (validators Or) Validate(v interface{}) error {
 
-	e := ErrorCollection{}
+	e := fail.List{}
 
 	for _, validator := range validators {
-		if err := validator.Validate(v); err == nil {
+		if err := fail.OrNil(validator.Validate(v)); err == nil {
 			return nil
 		} else {
-			e.Add(err)
+			e.Append(err)
 		}
 	}
 
@@ -20,19 +24,15 @@ func (validators Or) Validate(v interface{}) Error {
 type And []Validator
 
 // Validate implements Validator
-func (validators And) Validate(v interface{}) Error {
+func (validators And) Validate(v interface{}) error {
 
-	e := ErrorCollection{}
+	e := fail.List{}
 
 	for _, validator := range validators {
-		if err := validator.Validate(v); err != nil {
-			e.Add(err)
+		if err := fail.OrNil(validator.Validate(v)); err != nil {
+			e.Append(err)
 		}
 	}
 
-	if len(e) > 0 {
-		return e
-	}
-
-	return nil
+	return fail.OrNil(e)
 }

@@ -1,6 +1,7 @@
 package check
 
 import (
+	"github.com/neverbland/fail"
 	"reflect"
 )
 
@@ -8,7 +9,7 @@ import (
 type Map map[string]Validator
 
 // Validate execute validation using the validators.
-func (m Map) Validate(v interface{}) Error {
+func (m Map) Validate(v interface{}) error {
 
 	val, ok := v.(map[string]interface{})
 
@@ -16,7 +17,7 @@ func (m Map) Validate(v interface{}) Error {
 		return ValidationErr("map.invalid", "not a map", v)
 	}
 
-	e := ErrorMap{}
+	errs := fail.Map{}
 
 	for fieldname, validator := range m {
 
@@ -24,26 +25,22 @@ func (m Map) Validate(v interface{}) Error {
 
 		if !exists {
 			if _, ok := validator.(Child); ok {
-				e[fieldname] = ValidationErr("child.empty", "no such key", fieldname)
+				errs[fieldname] = ValidationErr("child.empty", "no such key", fieldname)
 			}
 			continue
 		}
 
-		if err := validator.Validate(fieldvalue); err != nil {
-			e[fieldname] = err
+		if err := fail.OrNil(validator.Validate(fieldvalue)); err != nil {
+			errs[fieldname] = err
 		}
 	}
 
-	if len(e) > 0 {
-		return e
-	}
-
-	return nil
+	return fail.OrNil(errs)
 }
 
 type Child []Validator
 
-func (validator Child) Validate(v interface{}) Error {
+func (validator Child) Validate(v interface{}) error {
 	return And(validator).Validate(v)
 }
 
@@ -51,7 +48,7 @@ func (validator Child) Validate(v interface{}) Error {
 type Struct map[string]Validator
 
 // Validate execute validation using the validators.
-func (s Struct) Validate(v interface{}) Error {
+func (s Struct) Validate(v interface{}) error {
 
 	val := reflect.ValueOf(v)
 
@@ -63,24 +60,20 @@ func (s Struct) Validate(v interface{}) Error {
 		return ValidationErr("struct.type", "not a struct")
 	}
 
-	e := ErrorMap{}
+	errs := fail.Map{}
 
 	for fieldname, validator := range s {
 		field := val.FieldByName(fieldname)
 
 		if field.Kind() == reflect.Invalid {
-			e[fieldname] = ValidationErr("struct.field", "missing field", fieldname)
+			errs[fieldname] = ValidationErr("struct.field", "missing field", fieldname)
 			continue
 		}
 
-		if err := validator.Validate(field.Interface()); err != nil {
-			e[fieldname] = err
+		if err := fail.OrNil(validator.Validate(field.Interface())); err != nil {
+			errs[fieldname] = err
 		}
 	}
 
-	if len(e) > 0 {
-		return e
-	}
-
-	return e
+	return fail.OrNil(errs)
 }

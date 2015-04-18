@@ -6,7 +6,7 @@ import (
 
 type Number []Validator
 
-func (validators Number) Validate(v interface{}) Error {
+func (validators Number) Validate(v interface{}) error {
 
 	switch v.(type) {
 	case int, float64:
@@ -21,7 +21,7 @@ func (validators Number) Validate(v interface{}) Error {
 
 type Integer []Validator
 
-func (validators Integer) Validate(v interface{}) Error {
+func (validators Integer) Validate(v interface{}) error {
 
 	val, ok := v.(int)
 
@@ -35,7 +35,7 @@ func (validators Integer) Validate(v interface{}) Error {
 
 type Float []Validator
 
-func (validators Float) Validate(v interface{}) Error {
+func (validators Float) Validate(v interface{}) error {
 
 	val, ok := v.(float64)
 
@@ -60,7 +60,7 @@ type LowerThanNumber struct {
 	Inclusive  bool
 }
 
-func (validator LowerThanNumber) Validate(v interface{}) Error {
+func (validator LowerThanNumber) Validate(v interface{}) error {
 
 	switch val := v.(type) {
 	case float64:
@@ -102,7 +102,7 @@ type GreaterThanNumber struct {
 }
 
 // Validate check value against constraint
-func (validator GreaterThanNumber) Validate(v interface{}) Error {
+func (validator GreaterThanNumber) Validate(v interface{}) error {
 
 	switch val := v.(type) {
 	case float64:

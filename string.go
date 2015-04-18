@@ -7,7 +7,7 @@ import (
 
 type String []Validator
 
-func (validators String) Validate(v interface{}) Error {
+func (validators String) Validate(v interface{}) error {
 	_, ok := v.(string)
 	if !ok {
 		return ValidationErr("string.type", "not a string")
@@ -19,7 +19,7 @@ func (validators String) Validate(v interface{}) Error {
 //short form to check if value is a string and not empty
 type NonEmptyString struct{}
 
-func (validator NonEmptyString) Validate(v interface{}) Error {
+func (validator NonEmptyString) Validate(v interface{}) error {
 	return String{NonEmpty{}}.Validate(v)
 }
 
@@ -29,7 +29,7 @@ type MinChar struct {
 }
 
 // Validate check value against constraint
-func (validator MinChar) Validate(v interface{}) Error {
+func (validator MinChar) Validate(v interface{}) error {
 
 	if len(v.(string)) < validator.Constraint {
 		return ValidationErr("string.min", "too short, minimum %v characters", validator.Constraint)
@@ -43,7 +43,7 @@ type MaxChar struct {
 }
 
 // Validate check value against constraint
-func (validator MaxChar) Validate(v interface{}) Error {
+func (validator MaxChar) Validate(v interface{}) error {
 	if len(v.(string)) > validator.Constraint {
 		return ValidationErr("string.max", "too long, minimum %v characters", validator.Constraint)
 	}
@@ -55,7 +55,7 @@ func (validator MaxChar) Validate(v interface{}) Error {
 type Email struct{}
 
 // Validate email addresses
-func (validator Email) Validate(v interface{}) Error {
+func (validator Email) Validate(v interface{}) error {
 
 	str := v.(string)
 
@@ -76,7 +76,7 @@ type RegexpValidator struct {
 }
 
 // Validate using regex
-func (validator RegexpValidator) Validate(v interface{}) Error {
+func (validator RegexpValidator) Validate(v interface{}) error {
 
 	if !validator.MatchString(v.(string)) {
 		return ValidationErr("string.regex", "'%v' does not match '%v'", v, validator.String())
@@ -91,7 +91,7 @@ var UUIDRe = regexp.MustCompile("^[a-z0-9]{8}-[a-z0-9]{4}-[1-5][a-z0-9]{3}-[a-z0
 type UUID struct{}
 
 // Validate checks a string as correct UUID format
-func (validator UUID) Validate(v interface{}) Error {
+func (validator UUID) Validate(v interface{}) error {
 
 	if !UUIDRe.MatchString(v.(string)) {
 		return ValidationErr("string.uuid", "'%v' is an invalid uuid", v)

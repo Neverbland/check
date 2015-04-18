@@ -11,7 +11,7 @@ type CustomStringContainValidator struct {
 	Constraint string
 }
 
-func (validator CustomStringContainValidator) Validate(v interface{}) Error {
+func (validator CustomStringContainValidator) Validate(v interface{}) error {
 	if !strings.Contains(v.(string), validator.Constraint) {
 		return ValidationErr("customStringContainValidator", "customStringContainValidator", v, validator.Constraint)
 	}
@@ -28,7 +28,7 @@ type User struct {
 	Birthday time.Time
 }
 
-func (u *User) Validate() Error {
+func (u *User) Validate() error {
 	s := Struct{
 		"Username": String{
 			NonEmpty{},
@@ -74,16 +74,12 @@ func TestIntegration(t *testing.T) {
 		time.Date(1980, time.January, 1, 1, 0, 0, 0, time.UTC),
 	}
 
-	err := ErrorReader{invalidUser.Validate()}
+	err := Reader{invalidUser.Validate()}
 
-	assert.False(err.Empty(), "Expected 'invalidUser' to be invalid")
+	assert.Error(err.OrNil(), "Expected 'invalidUser' to be invalid")
+	assert.Error(err.Get("Username"), "Expected errors for 'Username'")
 
-	err = err.Get("Username")
-	assert.False(err.Empty(), "Expected errors for 'Username'")
-	assert.Equal(1, err.Count(), "Expected 1 error for 'Username'")
-	assert.Equal("string.regex", err.Name(), "Expected regex error")
-
-	assert.True(ErrorReader{validUser.Validate()}.Empty(), "Expected 'validUser' to be valid")
+	assert.NoError(Reader{validUser.Validate()}.OrNil(), "Expected 'validUser' to be valid")
 }
 
 func BenchmarkValidate(b *testing.B) {

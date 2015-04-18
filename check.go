@@ -8,18 +8,18 @@ import (
 // Validator is an interface for constraint types with a method of validate()
 type Validator interface {
 	// Validate check value against constraints
-	Validate(v interface{}) Error
+	Validate(v interface{}) error
 }
 
-func Validate(v Validator, val interface{}) ErrorReader {
-	return ErrorReader{v.Validate(val)}
+func Validate(v Validator, val interface{}) Reader {
+	return Reader{v.Validate(val)}
 }
 
 // NonEmpty check that the value is not a zeroed value depending on its type
 type NonEmpty struct{}
 
-// Validate value to not be a zeroed value, return error and empty slice of strings
-func (validator NonEmpty) Validate(v interface{}) Error {
+// Validate value to not be a zeroed value
+func (validator NonEmpty) Validate(v interface{}) error {
 
 	err := ValidationErr("empty", "value cannot be empty")
 
@@ -43,20 +43,10 @@ func (validator NonEmpty) Validate(v interface{}) Error {
 	return nil
 }
 
-// Validate value to not be a zeroed value, return error and empty slice of strings
-func (validator NonEmpty) ValidateString(v string) Error {
-
-	if len(v) == 0 {
-		return ValidationErr("empty", "value cannot be empty")
-	}
-
-	return nil
-}
-
 //Callback validator
-type Callback func(interface{}) Error
+type Callback func(interface{}) error
 
-func (validator Callback) Validate(v interface{}) Error {
+func (validator Callback) Validate(v interface{}) error {
 	return validator(v)
 }
 
@@ -68,7 +58,7 @@ type Normalize struct {
 	Validator   Validator
 }
 
-func (validator Normalize) Validate(v interface{}) Error {
+func (validator Normalize) Validate(v interface{}) error {
 
 	for _, fn := range validator.Normalizers {
 		if val, err := fn(v); err != nil {
@@ -84,10 +74,10 @@ func (validator Normalize) Validate(v interface{}) Error {
 //Overrides error if present
 type CustomError struct {
 	Validator
-	Error Error
+	Error error
 }
 
-func (validator CustomError) Validate(v interface{}) Error {
+func (validator CustomError) Validate(v interface{}) error {
 	if err := validator.Validator.Validate(v); err != nil {
 		return validator.Error
 	}

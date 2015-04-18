@@ -13,11 +13,11 @@ type assertion struct {
 
 func runAssertions(assertions []assertion, t *testing.T) {
 	for _, a := range assertions {
-		err := Validate(a.v, a.val)
+		err := Validate(a.v, a.val).OrNil()
 		if a.valid {
-			assert.True(t, err.Empty(), "%#v : %#v expected to be valid. %s", a.v, a.val, err)
+			assert.NoError(t, err, "%#v : %#v expected to be valid. %s", a.v, a.val, err)
 		} else {
-			assert.False(t, err.Empty(), "%#v: %#v expected to be invalid.", a.v, a.val)
+			assert.Error(t, err, "%#v: %#v expected to be invalid.", a.v, a.val)
 		}
 
 	}

@@ -1,6 +1,7 @@
 package check
 
 import (
+	"github.com/neverbland/fail"
 	"reflect"
 )
 
@@ -8,7 +9,7 @@ type Each struct {
 	Inner Validator
 }
 
-func (c Each) Validate(v interface{}) Error {
+func (c Each) Validate(v interface{}) error {
 
 	rv := reflect.ValueOf(v)
 	rvt := rv.Type()
@@ -16,39 +17,32 @@ func (c Each) Validate(v interface{}) Error {
 	switch rvt.Kind() {
 	case reflect.Array, reflect.Slice:
 
-		err := make(ErrorCollection, rv.Len())
+		errs := make(fail.Collection, rv.Len())
 
 		for i := 0; i < rv.Len(); i++ {
-			if verr := c.Inner.Validate(rv.Index(i).Interface()); verr != nil {
-				err[i] = verr
+			if err := c.Inner.Validate(rv.Index(i).Interface()); fail.IsError(err) {
+				errs[i] = err
 			}
 		}
 
-		if len(err) > 0 {
-			return err
-		}
+		return fail.OrNil(errs)
 
-		return nil
 	case reflect.Map:
 
 		if rvt.Key().Kind() != reflect.String {
 			return ValidationErr("each.invalid", "%T keys are not strings", v)
 		}
 
-		err := ErrorMap{}
+		errs := make(fail.Map, rv.Len())
 
-		for _, k := range rv.MapKeys() {
+	for _, k := range rv.MapKeys() {
 
-			if verr := c.Inner.Validate(rv.MapIndex(k).Interface()); verr != nil {
-				err[k.String()] = verr
-			}
+		if err := c.Inner.Validate(rv.MapIndex(k).Interface()); fail.IsError(err) {
+			errs[k.String()] = err
 		}
+	}
 
-		if len(err) > 0 {
-			return err
-		}
-
-		return nil
+		return fail.OrNil(errs)
 	}
 
 	return ValidationErr("each.invalid", "%T not a slice/array/map", v)

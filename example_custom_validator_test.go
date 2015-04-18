@@ -1,6 +1,8 @@
 package check
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func ExampleValidator() {
 	username := "invalid*"
