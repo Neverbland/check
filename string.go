@@ -8,12 +8,12 @@ import (
 type String []Validator
 
 func (validators String) Validate(v interface{}) error {
-	_, ok := v.(string)
+	strv, ok := v.(string)
 	if !ok {
 		return ValidationErr("string.type", "not a string")
 	}
 
-	return And(validators).Validate(v)
+	return And(validators).Validate(strv)
 }
 
 //short form to check if value is a string and not empty
@@ -59,7 +59,7 @@ func (validator Email) Validate(v interface{}) error {
 
 	str := v.(string)
 
-	if !strings.Contains(str, "@") || string(str[0]) == "@" || string(str[len(str) - 1]) == "@" {
+	if !strings.Contains(str, "@") || string(str[0]) == "@" || string(str[len(str)-1]) == "@" {
 		return ValidationErr("string.email", "'%v' is an invalid email address", str)
 	}
 

@@ -14,7 +14,7 @@ func (m Map) Validate(v interface{}) error {
 	val, ok := v.(map[string]interface{})
 
 	if !ok {
-		return ValidationErr("map.invalid", "not a map", v)
+		return ValidationErr("map.invalid", "not a map")
 	}
 
 	errs := fail.Map{}
@@ -25,7 +25,7 @@ func (m Map) Validate(v interface{}) error {
 
 		if !exists {
 			if _, ok := validator.(Child); ok {
-				errs[fieldname] = ValidationErr("child.empty", "no such key", fieldname)
+				errs[fieldname] = ValidationErr("child.empty", "no such key")
 			}
 			continue
 		}
@@ -66,7 +66,7 @@ func (s Struct) Validate(v interface{}) error {
 		field := val.FieldByName(fieldname)
 
 		if field.Kind() == reflect.Invalid {
-			errs[fieldname] = ValidationErr("struct.field", "missing field", fieldname)
+			errs[fieldname] = ValidationErr("struct.field", "no such field", fieldname)
 			continue
 		}
 
