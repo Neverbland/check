@@ -37,6 +37,10 @@ func (e Reader) Error() string {
 	return ""
 }
 
+func (e Reader) ErrorView() interface{} {
+	return fail.View(e.ErrorInterface)
+}
+
 func (e Reader) Get(path ...string) Reader {
 
 	if len(path) == 0 {
