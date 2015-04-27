@@ -16,7 +16,7 @@ func Validate(v Validator, val interface{}) Reader {
 }
 
 // NonEmpty check that the value is not a zeroed value depending on its type
-type NonEmpty struct{}
+type NonEmpty []Validator
 
 // Validate value to not be a zeroed value
 func (validator NonEmpty) Validate(v interface{}) error {
@@ -40,7 +40,7 @@ func (validator NonEmpty) Validate(v interface{}) error {
 		}
 	}
 
-	return nil
+	return And(validator).Validate(v)
 }
 
 //Callback validator
