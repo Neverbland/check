@@ -11,26 +11,26 @@ type Map map[string]Validator
 // Validate execute validation using the validators.
 func (m Map) Validate(v interface{}) error {
 
-	val, ok := v.(map[string]interface{})
+	val := reflect.ValueOf(v)
 
-	if !ok {
-		return ValidationErr("map.invalid", "not a map")
+	if val.Kind() != reflect.Map {
+		return ValidationErr("map.type", "not a map")
 	}
 
 	errs := fail.Map{}
 
 	for fieldname, validator := range m {
 
-		fieldvalue, exists := val[fieldname]
+		fv := val.MapIndex(reflect.ValueOf(fieldname))
 
-		if !exists {
+		if !fv.IsValid() {
 			if _, ok := validator.(Child); ok {
 				errs[fieldname] = ValidationErr("child.empty", "no such key")
 			}
 			continue
 		}
 
-		if err := fail.OrNil(validator.Validate(fieldvalue)); err != nil {
+		if err := fail.OrNil(validator.Validate(fv.Interface())); err != nil {
 			errs[fieldname] = err
 		}
 	}
